@@ -15,3 +15,8 @@ For instance, to scan the port range from 1 to 1024 on example.com host:
 ```
 shell> perl udp-scan.pl example.com 1-1024
 ```
+
+## Dependencies ##
+
+* Net::Ping
+* IO::Select

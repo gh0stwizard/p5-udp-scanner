@@ -16,7 +16,7 @@ my $host = $ARGV[0] || '127.0.0.1';
 my ( $first_port, $last_port ) = split( /-/, $ARGV[1] || '1-65535', 2 );
 
 # Time  to wait for the "destination unreachable" package.
-my $icmp_timeout = int( $ARGV[2] ) || 2;
+my $icmp_timeout = int( $ARGV[2] || 2 );
 
 # Buffer to send via UDP
 my $hello = "Hello\n";
