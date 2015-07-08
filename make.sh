@@ -1,6 +1,6 @@
 #!/bin/sh
 
-APPNAME="udp-scan"
+APPNAME="udp-scan-$(arch)"
 STRIP="ppi" #none" #pod"
 LINKTYPE="static" #allow-dynamic"
 BIN_DIR="bin"
