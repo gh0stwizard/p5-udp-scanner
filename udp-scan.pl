@@ -9,6 +9,8 @@ use strict;
 use Net::Ping;
 use IO::Select;
 use IO::Socket::INET;
+use NetPacket::IP;
+use NetPacket::ICMP;
 
 
 # IP address to scan
@@ -39,12 +41,13 @@ for my $port (int( $first_port) .. int( $last_port || $first_port ) ) {
 
 exit 0;
 
+
 sub check_udp($$) {
   my ( $host, $port ) = @_;
   
 
   # Create the icmp socket for the "destination unreachable" packages  
-  my $icmp = IO::Socket::INET->new(Proto   => "icmp" );
+  my $icmp = IO::Socket::INET->new( Proto => "icmp" );
 
   # Create UDP socket to the remote  host and port
   my $udp = IO::Socket::INET->new
@@ -66,18 +69,32 @@ sub check_udp($$) {
 
   # For every socket we had received packets 
   # (In our case only one - icmp_socket)
-  my @done = $select->can_read( $timeout );
+  my $i = 1;
+  do {
+    # wait for packets
+    sleep $timeout;
 
-  for my $socket ( @done ) {
-    # If we have captured an icmp packages,
-    # Its probably "destination unreachable"
-    if ( $socket == $icmp ) {
-      # Set the flag and clean the socket buffers
-      $icmp_arrived = 1;
-      $icmp->recv( my $packet, 64, 0 );
-      return 0;
+    my @done = $select->can_read( 0 );
+
+    for my $socket ( @done ) {
+      # If we have captured an icmp packages,
+      # Its probably "destination unreachable"
+      if ( $socket == $icmp ) {
+        # Set the flag and clean the socket buffers
+
+        $icmp->recv( my $packet, 64, 0 );
+      
+        my $p = NetPacket::ICMP->decode( &NetPacket::IP::strip( $packet ) );
+        my ( $type, $code ) = @$p{ qw( type code ) };
+
+        if ( $type == NetPacket::ICMP::ICMP_UNREACH
+          && $code == NetPacket::ICMP::ICMP_UNREACH_PORT )
+        {
+          $icmp_arrived = 1;
+        }
+      }
     }
-  }
+  } while ( $i-- >= 0 );
 
   close( $icmp );
   close( $udp );
